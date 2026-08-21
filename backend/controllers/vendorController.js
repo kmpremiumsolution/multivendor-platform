@@ -69,3 +69,22 @@ exports.deleteVendor = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+// @desc    Get logged-in vendor's own profile
+// @route   GET /api/vendors/mine
+exports.getMyVendor = async (req, res) => {
+  try {
+    const vendor = await Vendor.findOne({ owner: req.user._id });
+
+    if (!vendor) {
+      return res.status(404).json({
+        message: 'Vendor profile not found'
+      });
+    }
+
+    res.json(vendor);
+  } catch (error) {
+    res.status(500).json({
+      message: error.message
+    });
+  }
+};
