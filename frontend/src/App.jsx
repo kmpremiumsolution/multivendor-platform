@@ -5,6 +5,7 @@ import VendorDetail from './pages/VendorDetail';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import MyOrders from './pages/MyOrders';
+import VendorDashboard from './pages/VendorDashboard';
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/my-orders" element={<MyOrders />} />
+        <Route path="/vendor-dashboard" element={<VendorDashboard />} />
       </Routes>
     </>
   );
