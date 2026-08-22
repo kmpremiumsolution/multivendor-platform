@@ -15,7 +15,7 @@ exports.getProducts = async (req, res) => {
   }
 };
 
-// @desc    Create product/service (vendor owner only)
+// @desc    Create product/service
 // @route   POST /api/products
 exports.createProduct = async (req, res) => {
   try {
@@ -25,6 +25,7 @@ exports.createProduct = async (req, res) => {
       return res.status(404).json({ message: 'Vendor not found' });
     }
 
+    // Only vendor owner or admin can create
     if (
       vendor.owner.toString() !== req.user._id.toString() &&
       req.user.role !== 'admin'
@@ -33,6 +34,7 @@ exports.createProduct = async (req, res) => {
     }
 
     const product = await Product.create(req.body);
+
     res.status(201).json(product);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -45,8 +47,8 @@ exports.getProductsByVendor = async (req, res) => {
   try {
     const products = await Product.find({
       vendor: req.params.vendorId,
-      isAvailable: true
-    });
+      isAvailable: true,
+    }).sort('-createdAt');
 
     res.json(products);
   } catch (error) {
@@ -89,6 +91,9 @@ exports.updateProduct = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized' });
     }
 
+    // Prevent vendor relationship from being reassigned
+    delete req.body.vendor;
+
     Object.assign(product, req.body);
     await product.save();
 
@@ -102,51 +107,23 @@ exports.updateProduct = async (req, res) => {
 // @route   DELETE /api/products/:id
 exports.deleteProduct = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
+    const product = await Product.findById(req.params.id)
+      .populate('vendor');
 
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });
     }
 
-    await product.deleteOne();
-
-    res.json({ message: 'Product removed' });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};    if (!product) return res.status(404).json({ message: 'Product not found' });
-    res.json(product);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-// @desc    Update product
-// @route   PUT /api/products/:id
-exports.updateProduct = async (req, res) => {
-  try {
-    const product = await Product.findById(req.params.id).populate('vendor');
-    if (!product) return res.status(404).json({ message: 'Product not found' });
-
-    if (product.vendor.owner.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+    // Only vendor owner or admin can delete
+    if (
+      product.vendor.owner.toString() !== req.user._id.toString() &&
+      req.user.role !== 'admin'
+    ) {
       return res.status(403).json({ message: 'Not authorized' });
     }
 
-    Object.assign(product, req.body);
-    await product.save();
-    res.json(product);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-// @desc    Delete product
-// @route   DELETE /api/products/:id
-exports.deleteProduct = async (req, res) => {
-  try {
-    const product = await Product.findById(req.params.id);
-    if (!product) return res.status(404).json({ message: 'Product not found' });
     await product.deleteOne();
+
     res.json({ message: 'Product removed' });
   } catch (error) {
     res.status(500).json({ message: error.message });
